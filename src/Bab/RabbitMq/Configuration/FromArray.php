@@ -67,7 +67,7 @@ class FromArray implements Configuration
     /**
      * {@inheritdoc}
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return isset($this->config[$offset]) ? $this->config[$offset] : null;
     }
