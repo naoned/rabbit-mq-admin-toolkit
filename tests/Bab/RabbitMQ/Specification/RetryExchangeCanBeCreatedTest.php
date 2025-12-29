@@ -4,27 +4,28 @@ namespace Bab\RabbitMq\Tests\Specification;
 
 use Bab\RabbitMq\Configuration;
 use Bab\RabbitMq\Specification\RetryExchangeCanBeCreated;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class RetryExchangeCanBeCreatedTest extends TestCase
+final class RetryExchangeCanBeCreatedTest extends TestCase
 {
-    private $specification;
+    private RetryExchangeCanBeCreated
+        $specification;
 
     public function setUp(): void
     {
         $this->specification = new RetryExchangeCanBeCreated();
     }
 
-    /**
-     * @dataProvider provideConfig
-     */
-    public function testItCreatesAnExchange(bool $expected, array $arrayConfig)
+    #[DataProvider('provideConfig')]
+    public function testItCreatesAnExchange(bool $expected, array $arrayConfig): void
     {
         $config = new Configuration\FromArray($arrayConfig);
-        $this->assertEquals($expected, $this->specification->isSatisfiedBy($config));
+
+        self::assertEquals($expected, $this->specification->isSatisfiedBy($config));
     }
 
-    public function provideConfig()
+    public static function provideConfig(): array
     {
         return [
             [

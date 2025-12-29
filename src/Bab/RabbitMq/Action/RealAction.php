@@ -2,31 +2,22 @@
 
 namespace Bab\RabbitMq\Action;
 
-class RealAction extends Action
+class RealAction extends AbstractAction
 {
-    /**
-     * {@inheritdoc}
-     */
     public function createExchange(string $name, array $parameters): void
     {
         $this->log(sprintf('Create exchange <info>%s</info>', $name));
 
-        $this->query('PUT', '/api/exchanges/'.$this->vhost.'/'.$name, $parameters);
+        $this->query('PUT', '/api/exchanges/' . $this->vhost . '/' . $name, $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function createQueue(string $name, array $parameters): void
     {
         $this->log(sprintf('Create queue <info>%s</info>', $name));
 
-        $this->query('PUT', '/api/queues/'.$this->vhost.'/'.$name, $parameters);
+        $this->query('PUT', '/api/queues/' . $this->vhost . '/' . $name, $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function createBinding(string $name, string $queue, string $routingKey = null, array $arguments = []): void
     {
         $this->log(sprintf(
@@ -40,20 +31,18 @@ class RealAction extends Action
             'arguments' => $arguments,
         ];
 
-        if (null !== $routingKey) {
+        if(null !== $routingKey)
+        {
             $parameters['routing_key'] = $routingKey;
         }
 
-        $this->query('POST', '/api/bindings/'.$this->vhost.'/e/'.$name.'/q/'.$queue, $parameters);
+        $this->query('POST', '/api/bindings/' . $this->vhost . '/e/' . $name . '/q/' . $queue, $parameters);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function setPermissions(string $user, array $parameters = []): void
     {
         $this->log(sprintf('Grant following permissions for user <info>%s</info> on vhost <info>%s</info>: <info>%s</info>', $user, $this->vhost, json_encode($parameters)));
 
-        $this->query('PUT', '/api/permissions/'.$this->vhost.'/'.$user, $parameters);
+        $this->query('PUT', '/api/permissions/' . $this->vhost . '/' . $user, $parameters);
     }
 }

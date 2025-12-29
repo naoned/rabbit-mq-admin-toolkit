@@ -3,16 +3,14 @@
 namespace Bab\RabbitMq\Command;
 
 use Bab\RabbitMq\Configuration;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class VhostMappingCreateCommand extends BaseCommand
+final class VhostMappingCreateCommand extends BaseCommand
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function configure(): void
     {
         parent::configure();
@@ -26,26 +24,25 @@ class VhostMappingCreateCommand extends BaseCommand
         ;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $configuration = new Configuration\Yaml($input->getArgument('filepath'));
 
         $vhost = $input->getOption('vhost');
-        if (null === $vhost) {
+        if(null === $vhost)
+        {
             $vhost = $configuration->getVhost();
         }
 
         $vhostManager = $this->getVhostManager($input, $output, $vhost);
 
-        if ($input->getOption('erase-vhost')) {
+        if($input->getOption('erase-vhost'))
+        {
             $vhostManager->resetVhost();
         }
 
         $vhostManager->createMapping($configuration);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

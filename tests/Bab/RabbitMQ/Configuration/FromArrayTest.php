@@ -2,13 +2,12 @@
 
 namespace Bab\RabbitMq\Tests\Configuration;
 
-use Prophecy\Argument;
 use Bab\RabbitMq\Configuration;
 use PHPUnit\Framework\TestCase;
 
 class FromArrayTest extends TestCase
 {
-    public function test_with_dl_and_unroutable()
+    public function test_with_dl_and_unroutable(): void
     {
         $config = new Configuration\FromArray([
             'my_vhost' => [
@@ -19,8 +18,8 @@ class FromArrayTest extends TestCase
             ],
         ]);
 
-        $this->assertSame('my_vhost', $config->getVhost());
-        $this->assertTrue($config->hasDeadLetterExchange());
-        $this->assertTrue($config->hasUnroutableExchange());
+        self::assertSame('my_vhost', $config->getVhost());
+        self::assertTrue($config->hasDeadLetterExchange());
+        self::assertTrue($config->hasUnroutableExchange());
     }
 }

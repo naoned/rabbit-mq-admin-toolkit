@@ -2,6 +2,7 @@ my_vhost_name:
     parameters:
         with_dl: true # If true, all queues will have a dl and the corresponding mapping with the exchange "dl"
         with_unroutable: true # If true, all exchange will be declared with an unroutable config
+        queue_type: quorum # If set, applied to all queues
 
     exchanges:
         my_exchange:
@@ -27,7 +28,6 @@ my_vhost_name:
 
         another_queue:
             durable: true
-            with_dl: false
             retries: [25, 125, 625]
             bindings:
                 -
