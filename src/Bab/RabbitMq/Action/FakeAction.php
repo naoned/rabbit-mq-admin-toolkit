@@ -2,20 +2,18 @@
 
 namespace Bab\RabbitMq\Action;
 
-class RealAction extends AbstractAction
+class FakeAction extends AbstractAction
 {
     public function createExchange(string $name, array $parameters): void
     {
         $this->log(sprintf('Create exchange <info>%s</info>', $name));
-
-        $this->query('PUT', '/api/exchanges/' . $this->vhost . '/' . $name, $parameters);
+        $this->logParameters($parameters);
     }
 
     public function createQueue(string $name, array $parameters): void
     {
         $this->log(sprintf('Create queue <info>%s</info>', $name));
-
-        $this->query('PUT', '/api/queues/' . $this->vhost . '/' . $name, $parameters);
+        $this->logParameters($parameters);
     }
 
     public function createBinding(string $name, string $queue, ?string $routingKey = null, array $arguments = []): void
@@ -36,13 +34,45 @@ class RealAction extends AbstractAction
             $parameters['routing_key'] = $routingKey;
         }
 
-        $this->query('POST', '/api/bindings/' . $this->vhost . '/e/' . $name . '/q/' . $queue, $parameters);
+        $this->logParameters($parameters);
     }
 
     public function setPermissions(string $user, array $parameters = []): void
     {
         $this->log(sprintf('Grant following permissions for user <info>%s</info> on vhost <info>%s</info>: <info>%s</info>', $user, $this->vhost, json_encode($parameters)));
+        $this->logParameters($parameters);
+    }
 
-        $this->query('PUT', '/api/permissions/' . $this->vhost . '/' . $user, $parameters);
+    private function logParameters(array $parameters): void
+    {
+        $this->log(
+            $this->parametersToLogFormat($parameters)
+        );
+    }
+
+    private function parametersToLogFormat(array $parameters, string $name = "parameters", int $indentation = 1): string
+    {
+        $output = $this->indent($indentation) . "$name = [" . PHP_EOL;
+
+        foreach($parameters as $param => $value)
+        {
+            if(is_array($value))
+            {
+                $output .= $this->parametersToLogFormat($value, $param, $indentation + 1);
+            }
+            else
+            {
+                $output .= $this->indent($indentation + 1) . "$param: $value" . PHP_EOL;
+            }
+        }
+
+        $output .= $this->indent($indentation) . "]" . PHP_EOL;
+
+        return $output;
+    }
+
+    private function indent(int $indentation): string
+    {
+        return str_repeat("  ", $indentation);
     }
 }

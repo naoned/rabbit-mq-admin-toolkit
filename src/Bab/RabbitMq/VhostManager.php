@@ -76,7 +76,7 @@ final class VhostManager
         $this->action->createQueue($queue, $parameters);
     }
 
-    private function createBinding(string $exchange, string $queue, string $routingKey = null, array $arguments = []): void
+    private function createBinding(string $exchange, string $queue, ?string $routingKey = null, array $arguments = []): void
     {
         $this->action->createBinding($exchange, $queue, $routingKey, $arguments);
     }
@@ -157,7 +157,7 @@ final class VhostManager
         return $permissions;
     }
 
-    private function query(string $method, string $url, array $parameters = null): string
+    private function query(string $method, string $url, ?array $parameters = null): string
     {
         return $this->httpClient->query($method, $url, $parameters);
     }
@@ -174,7 +174,7 @@ final class VhostManager
         $this->log(sprintf('With Unroutable: <info>%s</info>', true === $config->hasUnroutableExchange() ? 'true' : 'false'));
 
         // Unroutable queue must be created even if not asked but with_dl is
-        // true to not loose unroutable messages which enters in dl exchange
+        // true to not lose unroutable messages which enters in dl exchange
         if(true === $config->hasDeadLetterExchange() || true === $config->hasUnroutableExchange())
         {
             $this->createUnroutable();
@@ -223,7 +223,7 @@ final class VhostManager
 
     private function createQueues(Configuration $config): void
     {
-        if(! isset($config['queues']) || 0 === \count($config['queues']))
+        if(! isset($config['queues']) || 0 === count($config['queues']))
         {
             return;
         }
@@ -338,7 +338,7 @@ final class VhostManager
         }
     }
 
-    private function createUserBinding(string $queueName, array $bindingDefinition, int $delay = null): void
+    private function createUserBinding(string $queueName, array $bindingDefinition, ?int $delay = null): void
     {
         $defaultParameterValues = [
             'routing_key' => null,

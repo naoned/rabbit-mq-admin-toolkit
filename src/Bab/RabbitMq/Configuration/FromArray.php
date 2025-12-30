@@ -14,6 +14,8 @@ class FromArray implements Configuration
     private bool
         $hasDeadLetterExchange,
         $hasUnroutableExchange;
+    private ?string
+        $queueType;
 
     public function __construct(array $configuration)
     {
@@ -32,6 +34,24 @@ class FromArray implements Configuration
         if(isset($parameters['with_unroutable']))
         {
             $this->hasUnroutableExchange = (bool) $parameters['with_unroutable'];
+        }
+
+        $this->queueType = null;
+        if(isset($parameters['queue_type']))
+        {
+            $queueType = (string) $parameters['queue_type'];
+            $this->ensureQueueTypeIsValid($queueType);
+            $this->queueType = $queueType;
+        }
+    }
+
+    private function ensureQueueTypeisValid(string $value): void
+    {
+        $allowedValues = ['classic', 'quorum'];
+
+        if(! in_array($value, $allowedValues))
+        {
+            throw new LogicException("Invalid queue type : $value");
         }
     }
 
@@ -52,7 +72,17 @@ class FromArray implements Configuration
 
     public function offsetExists($offset): bool
     {
-        return \array_key_exists($offset, $this->config);
+        return array_key_exists($offset, $this->config);
+    }
+
+    public function hasQueueTypeBeenDefined(): bool
+    {
+        return $this->queueType !== null;
+    }
+
+    public function queueType(): string
+    {
+        return $this->queueType;
     }
 
     public function offsetGet($offset): mixed

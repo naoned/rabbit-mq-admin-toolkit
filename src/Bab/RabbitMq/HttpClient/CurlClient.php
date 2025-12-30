@@ -23,7 +23,7 @@ final class CurlClient implements HttpClient
         $this->pass = $pass;
     }
 
-    public function query(string $verb, string $uri, array $parameters = null): string
+    public function query(string $verb, string $uri, ?array $parameters = null): string
     {
         $handle = curl_init();
 
