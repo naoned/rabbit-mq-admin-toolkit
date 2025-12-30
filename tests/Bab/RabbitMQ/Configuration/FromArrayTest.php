@@ -18,7 +18,7 @@ class FromArrayTest extends TestCase
             ],
         ]);
 
-        self::assertSame('my_vhost', $config->getVhost());
+        self::assertSame('my_vhost', $config->vhost());
         self::assertTrue($config->hasDeadLetterExchange());
         self::assertTrue($config->hasUnroutableExchange());
     }

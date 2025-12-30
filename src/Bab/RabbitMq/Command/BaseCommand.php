@@ -35,7 +35,7 @@ class BaseCommand extends Command
         $action->setLogger($logger);
 
         $credentials['vhost'] = $vhost;
-        $vhostManager = new VhostManager($credentials, $action, $httpClient);
+        $vhostManager = new VhostManager($credentials, $action);
 
         $vhostManager->setLogger($logger);
 

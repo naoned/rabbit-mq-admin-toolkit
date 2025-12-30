@@ -31,7 +31,7 @@ final class VhostMappingCreateCommand extends BaseCommand
         $vhost = $input->getOption('vhost');
         if(null === $vhost)
         {
-            $vhost = $configuration->getVhost();
+            $vhost = $configuration->vhost();
         }
 
         $vhostManager = $this->getVhostManager($input, $output, $vhost);

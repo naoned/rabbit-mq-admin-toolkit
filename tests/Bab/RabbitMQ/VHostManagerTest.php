@@ -41,8 +41,7 @@ class VHostManagerTest extends TestCase
 
         $this->vhostManager = new VhostManager(
             $credentials,
-            $action,
-            $httpClient
+            $action
         );
 
         $this->buffer = new BufferedOutput();
@@ -80,7 +79,7 @@ class VHostManagerTest extends TestCase
                 'parameters' => [
                     'with_dl' => false,
                     'with_unroutable' => false,
-                    'queue-type' => "quorum"
+                    'queue_type' => "quorum"
                 ],
                 'exchanges' => [
                     'default' => ['type' => 'direct', 'durable' => true],
@@ -133,12 +132,16 @@ Create queue test_queue
     arguments = [
       x-dead-letter-exchange: dl
       x-dead-letter-routing-key: test_queue
+      x-queue-type: quorum
     ]
   ]
 
 Create queue test_queue_dl
   parameters = [
     durable: 1
+    arguments = [
+      x-queue-type: quorum
+    ]
   ]
 
 Create binding between exchange dl and queue test_queue_dl (with routing_key: test_queue)
@@ -162,6 +165,7 @@ Create queue test_queue_retry_5
       x-message-ttl: 5000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: test_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -179,6 +183,7 @@ Create queue test_queue_retry_10
       x-message-ttl: 10000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: test_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -196,6 +201,7 @@ Create queue test_queue_retry_15
       x-message-ttl: 15000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: test_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -225,7 +231,7 @@ LOG_OUTPUT;
                 'parameters' => [
                     'with_dl' => true,
                     'with_unroutable' => true,
-                    'queue-type' => 'quorum',
+                    'queue_type' => 'quorum',
                 ],
                 'exchanges' => [
                     'default' => ['type' => 'direct', 'durable' => true],
@@ -285,6 +291,9 @@ Create queue unroutable
   parameters = [
     auto_delete: false
     durable: 1
+    arguments = [
+      x-queue-type: quorum
+    ]
   ]
 
 Create binding between exchange unroutable and queue unroutable (with routing_key: none)
@@ -346,10 +355,10 @@ Create exchange my_exchange_headers
 Create queue my_queue
   parameters = [
     durable: 1
-    delay: 5000
     arguments = [
       x-dead-letter-exchange: dl
       x-dead-letter-routing-key: my_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -360,6 +369,7 @@ Create queue my_queue_delay_5000
       x-message-ttl: 5000
       x-dead-letter-exchange: delay
       x-dead-letter-routing-key: my_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -373,6 +383,9 @@ Create binding between exchange delay and queue my_queue (with routing_key: my_q
 Create queue my_queue_dl
   parameters = [
     durable: 1
+    arguments = [
+      x-queue-type: quorum
+    ]
   ]
 
 Create binding between exchange dl and queue my_queue_dl (with routing_key: my_queue)
@@ -402,12 +415,16 @@ Create queue another_queue
     arguments = [
       x-dead-letter-exchange: dl
       x-dead-letter-routing-key: another_queue
+      x-queue-type: quorum
     ]
   ]
 
 Create queue another_queue_dl
   parameters = [
     durable: 1
+    arguments = [
+      x-queue-type: quorum
+    ]
   ]
 
 Create binding between exchange dl and queue another_queue_dl (with routing_key: another_queue)
@@ -431,6 +448,7 @@ Create queue another_queue_retry_25
       x-message-ttl: 25000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: another_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -448,6 +466,7 @@ Create queue another_queue_retry_125
       x-message-ttl: 125000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: another_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -465,6 +484,7 @@ Create queue another_queue_retry_625
       x-message-ttl: 625000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: another_queue
+      x-queue-type: quorum
     ]
   ]
 
@@ -490,12 +510,16 @@ Create queue test_queue_with_retry
     arguments = [
       x-dead-letter-exchange: dl
       x-dead-letter-routing-key: test_queue_with_retry
+      x-queue-type: quorum
     ]
   ]
 
 Create queue test_queue_with_retry_dl
   parameters = [
     durable: 1
+    arguments = [
+      x-queue-type: quorum
+    ]
   ]
 
 Create binding between exchange dl and queue test_queue_with_retry_dl (with routing_key: test_queue_with_retry)
@@ -519,6 +543,7 @@ Create queue test_queue_with_retry_retry_42
       x-message-ttl: 42000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: test_queue_with_retry
+      x-queue-type: quorum
     ]
   ]
 
@@ -536,6 +561,7 @@ Create queue test_queue_with_retry_retry_66
       x-message-ttl: 66000
       x-dead-letter-exchange: retry
       x-dead-letter-routing-key: test_queue_with_retry
+      x-queue-type: quorum
     ]
   ]
 

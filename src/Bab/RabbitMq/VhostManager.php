@@ -2,6 +2,7 @@
 
 namespace Bab\RabbitMq;
 
+use Bab\RabbitMq\Amqp\QueueConfiguration;
 use Bab\RabbitMq\Specification\DeadLetterExchangeCanBeCreated;
 use Bab\RabbitMq\Specification\DelayExchangeCanBeCreated;
 use Bab\RabbitMq\Specification\RetryExchangeCanBeCreated;
@@ -17,53 +18,37 @@ final class VhostManager
         $credentials;
     private Action
         $action;
-    private HttpClient
-        $httpClient;
+    private ?Configuration
+        $mappingConfiguration;
 
-    public function __construct(array $credentials, Action $action, HttpClient $httpClient)
+    public function __construct(array $credentials, Action $action)
     {
         $this->credentials = $credentials;
         $this->credentials['vhost'] = str_replace('/', '%2f', $this->credentials['vhost']);
+
         $this->action = $action;
         $this->action->setVhost($this->credentials['vhost']);
-        $this->httpClient = $httpClient;
+
         $this->logger = new NullLogger();
+        $this->mappingConfiguration = null;
     }
 
     public function resetVhost(): void
     {
-        $vhost = $this->credentials['vhost'];
-        $this->log(sprintf('Delete vhost: <info>%s</info>', $vhost));
-
-        try
-        {
-            $this->query('DELETE', '/api/vhosts/' . $vhost);
-        }
-        catch(\Exception $e)
-        {
-        }
-
-        $this->log(sprintf('Create vhost: <info>%s</info>', $vhost));
-        $this->query('PUT', '/api/vhosts/' . $vhost);
-        $this->log(sprintf(
-            'Grant all permission for <info>%s</info> on vhost <info>%s</info>',
-            $this->credentials['user'],
-            $vhost
-        ));
-        $this->query('PUT', '/api/permissions/' . $vhost . '/' . $this->credentials['user'], [
-            'scope' => 'client',
-            'configure' => '.*',
-            'write' => '.*',
-            'read' => '.*',
-        ]);
+        $this->action->deleteVhost();
+        $this->action->createVhost($this->credentials);
     }
 
     public function createMapping(Configuration $config): void
     {
+        $this->mappingConfiguration = $config;
+
         $this->createBaseStructure($config);
         $this->createExchanges($config);
         $this->createQueues($config);
         $this->setPermissions($config);
+
+        $this->mappingConfiguration = null;
     }
 
     private function createExchange(string $exchange, array $parameters = []): void
@@ -73,6 +58,11 @@ final class VhostManager
 
     private function createQueue(string $queue, array $parameters = []): void
     {
+        if($this->mappingConfiguration && $this->mappingConfiguration->hasQueueTypeBeenDefined())
+        {
+            $parameters['arguments']['x-queue-type'] = $this->mappingConfiguration->queueType();
+        }
+
         $this->action->createQueue($queue, $parameters);
     }
 
@@ -157,11 +147,6 @@ final class VhostManager
         return $permissions;
     }
 
-    private function query(string $method, string $url, ?array $parameters = null): string
-    {
-        return $this->httpClient->query($method, $url, $parameters);
-    }
-
     private function log(string $message): void
     {
         $this->logger->info($message);
@@ -170,7 +155,6 @@ final class VhostManager
     private function createBaseStructure(Configuration $config): void
     {
         $this->log(sprintf('With DL: <info>%s</info>', true === $config->hasDeadLetterExchange() ? 'true' : 'false'));
-
         $this->log(sprintf('With Unroutable: <info>%s</info>', true === $config->hasUnroutableExchange() ? 'true' : 'false'));
 
         // Unroutable queue must be created even if not asked but with_dl is
@@ -230,111 +214,31 @@ final class VhostManager
 
         foreach($config['queues'] as $name => $parameters)
         {
-            $currentWithDl = $config->hasDeadLetterExchange();
-            $retries = [];
+            $this->createOneQueue($config, $name, $parameters);
+        }
+    }
 
-            $bindings = [];
+    private function createOneQueue(Configuration $config, string $name, array $parameters): void
+    {
+        $queueConfig = new QueueConfiguration($name, $parameters, $config);
 
-            if(isset($parameters['bindings']) && \is_array($parameters['bindings']))
-            {
-                $bindings = $parameters['bindings'];
-            }
-            unset($parameters['bindings']);
+        $this->createQueue($queueConfig->name(), $queueConfig->parameters());
 
-            if(isset($parameters['with_dl']))
-            {
-                $currentWithDl = (bool)$parameters['with_dl'];
-                unset($parameters['with_dl']);
-            }
+        if($queueConfig->hasDelay())
+        {
+            $this->createDelayArtifacts($queueConfig);
+        }
 
-            if(isset($parameters['retries']))
-            {
-                $retries = $parameters['retries'];
-                $currentWithDl = true;
-                unset($parameters['retries']);
-            }
+        if($queueConfig->withDL())
+        {
+            $this->createDeadLetterQueueAndBindings($queueConfig->name());
+        }
 
-            if($currentWithDl && ! isset($config['arguments']['x-dead-letter-exchange']))
-            {
-                if(! isset($parameters['arguments']))
-                {
-                    $parameters['arguments'] = [];
-                }
+        $this->createRetryQueues($queueConfig);
 
-                $parameters['arguments']['x-dead-letter-exchange'] = 'dl';
-                $parameters['arguments']['x-dead-letter-routing-key'] = $name;
-            }
-
-            $this->createQueue($name, $parameters);
-
-            $delay = null;
-            if(isset($parameters['delay']))
-            {
-                $delay = (int)$parameters['delay'];
-
-                $this->createQueue($name . '_delay_' . $delay, [
-                    'durable' => true,
-                    'arguments' => [
-                        'x-message-ttl' => $delay,
-                        'x-dead-letter-exchange' => 'delay',
-                        'x-dead-letter-routing-key' => $name,
-                    ],
-                ]);
-
-                $this->createBinding('delay', $name, $name);
-
-                unset($parameters['delay']);
-            }
-
-            if($currentWithDl)
-            {
-                $this->createQueue($name . '_dl', [
-                    'durable' => true,
-                ]);
-
-                $this->createBinding('dl', $name . '_dl', $name);
-            }
-
-            $retriesQueues = [];
-            for($i = 0; $i < count($retries); ++$i)
-            {
-                if(0 === $i)
-                {
-                    $this->createBinding('retry', $name, $name);
-                }
-
-                $retryQueueName = $name . '_retry_' . $retries[$i];
-
-                if(! in_array($retryQueueName, $retriesQueues))
-                {
-                    $this->createQueue($retryQueueName, [
-                        'durable' => true,
-                        'arguments' => [
-                            'x-message-ttl' => $retries[$i] * 1000,
-                            'x-dead-letter-exchange' => 'retry',
-                            'x-dead-letter-routing-key' => $name,
-                        ],
-                    ]);
-
-                    $retriesQueues[] = $retryQueueName;
-                }
-
-                $retryRoutingkey = $name . '_retry_' . ($i + 1);
-                $this->createBinding('retry', $retryQueueName, $retryRoutingkey);
-            }
-
-            foreach($bindings as $binding)
-            {
-                if(! is_array($binding) && false !== strpos($binding, ':'))
-                {
-                    $parts = explode(':', $binding);
-                    $binding = [
-                        'exchange' => $parts[0],
-                        'routing_key' => $parts[1],
-                    ];
-                }
-                $this->createUserBinding($name, $binding, $delay);
-            }
+        foreach($queueConfig->bindings() as $binding)
+        {
+            $this->createUserBinding($name, $binding, $queueConfig->delay());
         }
     }
 
@@ -363,5 +267,65 @@ final class VhostManager
         $bindingName = null !== $delay ? $queueName . '_delay_' . $delay : $queueName;
 
         $this->createBinding($parameters['exchange'], $bindingName, $parameters['routing_key'], $arguments);
+    }
+
+    private function createDelayArtifacts(QueueConfiguration $queueConfig): int
+    {
+        $delay = $queueConfig->delay();
+        $name = $queueConfig->name();
+
+        $this->createQueue($name . '_delay_' . $delay, [
+            'durable' => true,
+            'arguments' => [
+                'x-message-ttl' => $delay,
+                'x-dead-letter-exchange' => 'delay',
+                'x-dead-letter-routing-key' => $name,
+            ],
+        ]);
+
+        $this->createBinding('delay', $name, $name);
+
+        return $delay;
+    }
+
+    private function createDeadLetterQueueAndBindings(string $name): void
+    {
+        $this->createQueue($name . '_dl', [
+            'durable' => true,
+        ]);
+
+        $this->createBinding('dl', $name . '_dl', $name);
+    }
+
+    private function createRetryQueues(QueueConfiguration $queueConfig): void
+    {
+        $name = $queueConfig->name();
+        $retries = $queueConfig->retries();
+
+        $retriesQueues = [];
+        for($i = 0; $i < count($retries); ++$i)
+        {
+            if(0 === $i)
+            {
+                $this->createBinding('retry', $name, $name);
+            }
+
+            $retryQueueName = $name . '_retry_' . $retries[$i];
+
+            if(! in_array($retryQueueName, $retriesQueues))
+            {
+                $this->createQueue($retryQueueName, [
+                    'durable' => true,
+                    'arguments' => [
+                        'x-message-ttl' => $retries[$i] * 1000,
+                        'x-dead-letter-exchange' => 'retry',
+                        'x-dead-letter-routing-key' => $name,
+                    ],
+                ]);
+            }
+
+            $retryRoutingkey = $name . '_retry_' . ($i + 1);
+            $this->createBinding('retry', $retryQueueName, $retryRoutingkey);
+        }
     }
 }

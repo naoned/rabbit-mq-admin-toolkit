@@ -2,6 +2,8 @@
 
 namespace Bab\RabbitMq\Action;
 
+use Exception;
+
 class RealAction extends AbstractAction
 {
     public function createExchange(string $name, array $parameters): void
@@ -44,5 +46,37 @@ class RealAction extends AbstractAction
         $this->log(sprintf('Grant following permissions for user <info>%s</info> on vhost <info>%s</info>: <info>%s</info>', $user, $this->vhost, json_encode($parameters)));
 
         $this->query('PUT', '/api/permissions/' . $this->vhost . '/' . $user, $parameters);
+    }
+
+    public function deleteVhost(): void
+    {
+        $this->log(sprintf('Delete vhost: <info>%s</info>', $this->vhost));
+
+        try
+        {
+            $this->query('DELETE', '/api/vhosts/' . $this->vhost);
+        }
+        catch(Exception $e)
+        {
+        }
+    }
+
+    public function createVhost(array $credentials): void
+    {
+        $this->log(sprintf('Create vhost: <info>%s</info>', $this->vhost));
+
+        $this->query('PUT', '/api/vhosts/' . $this->vhost);
+
+        $this->log(sprintf(
+            'Grant all permission for <info>%s</info> on vhost <info>%s</info>',
+            $credentials['user'],
+            $this->vhost
+        ));
+        $this->query('PUT', '/api/permissions/' . $this->vhost . '/' . $credentials['user'], [
+            'scope' => 'client',
+            'configure' => '.*',
+            'write' => '.*',
+            'read' => '.*',
+        ]);
     }
 }

@@ -12,5 +12,9 @@ interface Action
 
     public function setPermissions(string $user, array $parameters = []): void;
 
+    public function deleteVhost(): void;
+
+    public function createVhost(array $credentials): void;
+
     public function setVhost(string $vhost): void;
 }

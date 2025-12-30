@@ -55,7 +55,7 @@ class FromArray implements Configuration
         }
     }
 
-    public function getVhost(): string
+    public function vhost(): string
     {
         return $this->vhost;
     }

@@ -2,6 +2,8 @@
 
 namespace Bab\RabbitMq\Action;
 
+use Exception;
+
 class FakeAction extends AbstractAction
 {
     public function createExchange(string $name, array $parameters): void
@@ -37,10 +39,26 @@ class FakeAction extends AbstractAction
         $this->logParameters($parameters);
     }
 
+    public function deleteVhost(): void
+    {
+        $this->log(sprintf('Delete vhost: <info>%s</info>', $this->vhost));
+    }
+
     public function setPermissions(string $user, array $parameters = []): void
     {
         $this->log(sprintf('Grant following permissions for user <info>%s</info> on vhost <info>%s</info>: <info>%s</info>', $user, $this->vhost, json_encode($parameters)));
         $this->logParameters($parameters);
+    }
+
+    public function createVhost(array $credentials): void
+    {
+        $this->log(sprintf('Create vhost: <info>%s</info>', $this->vhost));
+
+        $this->log(sprintf(
+            'Grant all permission for <info>%s</info> on vhost <info>%s</info>',
+            $credentials['user'],
+            $this->vhost
+        ));
     }
 
     private function logParameters(array $parameters): void
