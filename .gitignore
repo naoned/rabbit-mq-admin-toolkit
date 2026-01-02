@@ -6,3 +6,4 @@ composer.lock
 phpunit.phar
 var/
 whalephant
+docker/images/phpunit/Dockerfile
