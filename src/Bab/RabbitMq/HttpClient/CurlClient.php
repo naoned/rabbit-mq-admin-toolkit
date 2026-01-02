@@ -51,7 +51,7 @@ final class CurlClient implements HttpClient
             curl_setopt($handle, \CURLOPT_CUSTOMREQUEST, $verb);
         }
 
-        if(null !== $parameters)
+        if(null !== $parameters && count($parameters) > 0)
         {
             curl_setopt($handle, \CURLOPT_POSTFIELDS, json_encode($parameters));
         }
