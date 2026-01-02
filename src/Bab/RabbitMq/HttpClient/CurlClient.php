@@ -55,7 +55,7 @@ final class CurlClient implements HttpClient
         {
             curl_setopt($handle, \CURLOPT_POSTFIELDS, json_encode($parameters));
         }
-        else if('GET' !== $verb && 'DELETE' !== $verb)
+        elseif('GET' !== $verb && 'DELETE' !== $verb)
         {
             curl_setopt($handle, \CURLOPT_POSTFIELDS, '{}');
         }
