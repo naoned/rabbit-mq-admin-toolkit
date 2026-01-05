@@ -11,6 +11,7 @@ class VhostManager
 
     protected $credentials;
     private $httpClient;
+    private $mappingConfiguration;
 
     public function __construct(array $credentials, Action $action, HttpClient $httpClient)
     {
@@ -23,6 +24,7 @@ class VhostManager
         $this->action->setVhost($this->credentials['vhost']);
         $this->httpClient = $httpClient;
         $this->logger = new NullLogger();
+        $this->mappingConfiguration = null;
     }
 
     /**
@@ -62,10 +64,14 @@ class VhostManager
      */
     public function createMapping(Configuration $config)
     {
+        $this->mappingConfiguration = $config;
+
         $this->createBaseStructure($config);
         $this->createExchanges($config);
         $this->createQueues($config);
         $this->setPermissions($config);
+
+        $this->mappingConfiguration = null;
     }
 
     private function createBaseStructure(Configuration $config)
@@ -336,6 +342,10 @@ class VhostManager
      */
     protected function createQueue($queue, array $parameters = array())
     {
+        if($this->mappingConfiguration && $this->mappingConfiguration->hasQueueTypeBeenDefined()) {
+            $parameters['arguments']['x-queue-type'] = $this->mappingConfiguration->queueType();
+        }
+
         $this->action->createQueue($queue, $parameters);
     }
 
