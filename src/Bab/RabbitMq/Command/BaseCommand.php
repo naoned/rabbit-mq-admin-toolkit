@@ -35,7 +35,7 @@ class BaseCommand extends Command
         $action->setLogger($logger);
 
         $credentials['vhost'] = $vhost;
-        $vhostManager = new VhostManager($credentials, $action, $httpClient);
+        $vhostManager = new VhostManager($credentials, $action);
 
         $vhostManager->setLogger($logger);
 
@@ -44,13 +44,16 @@ class BaseCommand extends Command
 
     protected function getCredentials(InputInterface $input, OutputInterface $output): array
     {
-        if (null !== $connection = $input->getOption('connection')) {
-            $file = rtrim(getenv('HOME'), '/').'/.rabbitmq_admin_toolkit';
-            if (!file_exists($file)) {
+        if(null !== $connection = $input->getOption('connection'))
+        {
+            $file = rtrim(getenv('HOME'), '/') . '/.rabbitmq_admin_toolkit';
+            if(! file_exists($file))
+            {
                 throw new \InvalidArgumentException('Can\'t use connection option without a ~/.rabbitmq_admin_toolkit file');
             }
             $credentials = json_decode(file_get_contents($file), true);
-            if (!isset($credentials[$connection])) {
+            if(! isset($credentials[$connection]))
+            {
                 throw new \InvalidArgumentException("Connection $connection not found in ~/.rabbitmq_admin_toolkit");
             }
 
@@ -70,9 +73,12 @@ class BaseCommand extends Command
             'user' => $input->getOption('user'),
         ];
 
-        if ($input->hasParameterOption(['--password', '-p'])) {
+        if($input->hasParameterOption(['--password', '-p']))
+        {
             $credentials['password'] = $input->getOption('password');
-        } elseif (null === $input->getOption('password')) {
+        }
+        else if(null === $input->getOption('password'))
+        {
             $question = new Question('<question>Password?</question>');
             $question->setHidden(true);
 

@@ -4,30 +4,28 @@ namespace Bab\RabbitMq\Tests\Specification;
 
 use Bab\RabbitMq\Configuration;
 use Bab\RabbitMq\Specification\DeadLetterExchangeCanBeCreated;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-class DeadLetterExchangeCanBeCreatedTest extends TestCase
+final class DeadLetterExchangeCanBeCreatedTest extends TestCase
 {
-    private $specification;
+    private DeadLetterExchangeCanBeCreated
+        $specification;
 
     public function setUp(): void
     {
         $this->specification = new DeadLetterExchangeCanBeCreated();
     }
 
-    /**
-     * @param $expected
-     * @param array $arrayConfig
-     *
-     * @dataProvider provideConfig
-     */
-    public function testItCreatesAnExchange($expected, array $arrayConfig)
+    #[DataProvider('provideConfig')]
+    public function testItCreatesAnExchange(bool $expected, array $arrayConfig): void
     {
         $config = new Configuration\FromArray($arrayConfig);
-        $this->assertEquals($expected, $this->specification->isSatisfiedBy($config));
+
+        self::assertEquals($expected, $this->specification->isSatisfiedBy($config));
     }
 
-    public function provideConfig()
+    public static function provideConfig(): array
     {
         return [
             [

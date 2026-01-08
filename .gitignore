@@ -1,2 +1,9 @@
 vendor
 composer.lock
+.env
+.idea/
+.php-cs-fixer.cache
+phpunit.phar
+var/
+whalephant
+docker/images/phpunit/Dockerfile

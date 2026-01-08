@@ -5,9 +5,10 @@ namespace Bab\RabbitMq\Logger;
 use Psr\Log\AbstractLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class CliLogger extends AbstractLogger
+final class CliLogger extends AbstractLogger
 {
-    private $output;
+    private OutputInterface
+        $output;
 
     public function __construct(OutputInterface $output)
     {

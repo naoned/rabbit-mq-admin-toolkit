@@ -3,17 +3,19 @@
 namespace Bab\RabbitMq\Configuration;
 
 use Bab\RabbitMq\Configuration;
+use LogicException;
 
 class FromArray implements Configuration
 {
-    /** @var array */
-    private $config;
-    /** @var string */
-    private $vhost;
-    /** @var bool */
-    private $hasDeadLetterExchange;
-    /** @var bool */
-    private $hasUnroutableExchange;
+    private array
+        $config;
+    private string
+        $vhost;
+    private bool
+        $hasDeadLetterExchange,
+        $hasUnroutableExchange;
+    private ?string
+        $queueType;
 
     public function __construct(array $configuration)
     {
@@ -23,68 +25,78 @@ class FromArray implements Configuration
         $parameters = $this['parameters'];
 
         $this->hasDeadLetterExchange = false;
-        $this->hasUnroutableExchange = false;
-        if (isset($parameters['with_dl'])) {
+        if(isset($parameters['with_dl']))
+        {
             $this->hasDeadLetterExchange = (bool) $parameters['with_dl'];
         }
-        if (isset($parameters['with_unroutable'])) {
+
+        $this->hasUnroutableExchange = false;
+        if(isset($parameters['with_unroutable']))
+        {
             $this->hasUnroutableExchange = (bool) $parameters['with_unroutable'];
+        }
+
+        $this->queueType = null;
+        if(isset($parameters['queue_type']))
+        {
+            $queueType = (string) $parameters['queue_type'];
+            $this->ensureQueueTypeIsValid($queueType);
+            $this->queueType = $queueType;
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getVhost(): string
+    private function ensureQueueTypeisValid(string $value): void
+    {
+        $allowedValues = ['classic', 'quorum'];
+
+        if(! in_array($value, $allowedValues))
+        {
+            throw new LogicException("Invalid queue type : $value");
+        }
+    }
+
+    public function vhost(): string
     {
         return $this->vhost;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasDeadLetterExchange(): bool
     {
         return $this->hasDeadLetterExchange;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasUnroutableExchange(): bool
     {
         return $this->hasUnroutableExchange;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function offsetExists($offset): bool
     {
-        return \array_key_exists($offset, $this->config);
+        return array_key_exists($offset, $this->config);
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    public function hasQueueTypeBeenDefined(): bool
+    {
+        return $this->queueType !== null;
+    }
+
+    public function queueType(): string
+    {
+        return $this->queueType;
+    }
+
     public function offsetGet($offset): mixed
     {
-        return isset($this->config[$offset]) ? $this->config[$offset] : null;
+        return $this->config[$offset] ?? null;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function offsetSet($offset, $value): void
     {
-        throw new \LogicException('You shall not update configuration');
+        throw new LogicException('You shall not update configuration');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function offsetUnset($offset): void
     {
-        throw new \LogicException('No need to unset');
+        throw new LogicException('No need to unset');
     }
 }
