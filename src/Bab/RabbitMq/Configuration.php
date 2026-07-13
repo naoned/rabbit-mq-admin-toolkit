@@ -18,4 +18,14 @@ interface Configuration extends \ArrayAccess
      * @return bool
      */
     public function hasUnroutableExchange();
+
+    /**
+     * @return bool
+     */
+    public function hasQueueTypeBeenDefined();
+
+    /**
+     * @return string
+     */
+    public function queueType();
 }

@@ -3,6 +3,7 @@
 namespace Bab\RabbitMq\Configuration;
 
 use Bab\RabbitMq\Configuration;
+use LogicException;
 
 class FromArray implements Configuration
 {
@@ -10,6 +11,7 @@ class FromArray implements Configuration
     private $vhost;
     private $hasDeadLetterExchange;
     private $hasUnroutableExchange;
+    private $queueType;
 
     public function __construct($configuration)
     {
@@ -26,6 +28,39 @@ class FromArray implements Configuration
         if (isset($parameters['with_unroutable'])) {
             $this->hasUnroutableExchange = (bool) $parameters['with_unroutable'];
         }
+
+        $this->queueType = null;
+        if(isset($parameters['queue_type'])) {
+            $queueType = (string) $parameters['queue_type'];
+            $this->ensureQueueTypeIsValid($queueType);
+            $this->queueType = $queueType;
+        }
+    }
+
+    private function ensureQueueTypeisValid($value)
+    {
+        $allowedValues = ['classic', 'quorum'];
+
+        if(! in_array($value, $allowedValues))
+        {
+            throw new LogicException("Invalid queue type : $value");
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function hasQueueTypeBeenDefined()
+    {
+        return $this->queueType !== null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function queueType()
+    {
+        return $this->queueType;
     }
 
     /**
