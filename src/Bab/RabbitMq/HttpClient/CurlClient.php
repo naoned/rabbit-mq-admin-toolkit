@@ -73,8 +73,6 @@ final class CurlClient implements HttpClient
             throw new RuntimeException(sprintf('Receive code %d instead of 200, 201 or 204. Url: %s. Body: %s', $httpCode, $uri, $response));
         }
 
-        curl_close($handle);
-
         return $response;
     }
 }
